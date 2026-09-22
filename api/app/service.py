@@ -67,11 +67,17 @@ def allocate_shot_number(
     notes: str,
     interrupt_after_commit: bool = False,
 ) -> Allocation:
-    """在单个 IMMEDIATE 事务内完成幂等检查与发号，提交后返回。"""
+    """在单个 IMMEDIATE 事务内完成幂等检查与发号，提交后返回。
+
+    计数器递增与操作映射写入必须在同一事务内一起提交：提交点之前二者皆不可见，
+    COMMIT 返回时号码与映射同时生效。此后即使回包前进程崩溃（故障注入即模拟
+    该场景），重试也只会按映射重放原号码，绝不会出现“占了号却没落映射”的缺口。
+    """
     digest = content_hash(scene_id, notes)
     with _allocation_gate:
         with engine.connect() as conn:
             conn.exec_driver_sql("BEGIN IMMEDIATE")
+            created = False
             try:
                 existing = conn.execute(
                     select(
@@ -86,50 +92,42 @@ def allocate_shot_number(
                         raise PayloadConflictError(
                             client_op_id, existing["scene_id"], existing["notes"]
                         )
-                    conn.exec_driver_sql("COMMIT")
-                    return Allocation(
-                        scene_id, client_op_id, notes, existing["shot_number"], created=False
+                    number = existing["shot_number"]
+                else:
+                    conn.execute(
+                        sqlite_insert(SceneCounter)
+                        .values(scene_id=scene_id, next_number=1)
+                        .on_conflict_do_nothing()
                     )
-
-                conn.execute(
-                    sqlite_insert(SceneCounter)
-                    .values(scene_id=scene_id, next_number=1)
-                    .on_conflict_do_nothing()
-                )
-                number = conn.execute(
-                    select(SceneCounter.next_number).where(SceneCounter.scene_id == scene_id)
-                ).scalar_one()
-                conn.execute(
-                    update(SceneCounter)
-                    .where(SceneCounter.scene_id == scene_id)
-                    .values(next_number=number + 1)
-                )
+                    number = conn.execute(
+                        select(SceneCounter.next_number).where(SceneCounter.scene_id == scene_id)
+                    ).scalar_one()
+                    conn.execute(
+                        update(SceneCounter)
+                        .where(SceneCounter.scene_id == scene_id)
+                        .values(next_number=number + 1)
+                    )
+                    conn.execute(
+                        insert(Operation).values(
+                            client_op_id=client_op_id,
+                            scene_id=scene_id,
+                            notes=notes,
+                            payload_hash=digest,
+                            shot_number=number,
+                        )
+                    )
+                    created = True
                 conn.exec_driver_sql("COMMIT")
             except Exception:
                 conn.exec_driver_sql("ROLLBACK")
                 raise
 
-        if interrupt_after_commit:
+        # 故障注入点严格位于提交之后：此时号码与映射已共同持久化。
+        # 仅首次创建会走到这里；重放时 created=False，即使重试仍携带标志也不再触发。
+        if interrupt_after_commit and created:
             raise PostCommitUnavailableError()
 
-        with engine.connect() as conn:
-            conn.exec_driver_sql("BEGIN IMMEDIATE")
-            try:
-                conn.execute(
-                    insert(Operation).values(
-                        client_op_id=client_op_id,
-                        scene_id=scene_id,
-                        notes=notes,
-                        payload_hash=digest,
-                        shot_number=number,
-                    )
-                )
-                conn.exec_driver_sql("COMMIT")
-            except Exception:
-                conn.exec_driver_sql("ROLLBACK")
-                raise
-
-        return Allocation(scene_id, client_op_id, notes, number, created=True)
+        return Allocation(scene_id, client_op_id, notes, number, created=created)
 
 
 _OPERATION_COLUMNS = (
