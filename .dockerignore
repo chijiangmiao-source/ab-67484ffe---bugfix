@@ -1,0 +1,12 @@
+.git
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+web/dist
+web/test-results
+web/playwright-report
+**/.venv
+data
+*.db
+*.db-wal
+*.db-shm

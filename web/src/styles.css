@@ -1,0 +1,154 @@
+:root {
+  color-scheme: light;
+  font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+h1 {
+  font-size: 24px;
+  margin: 8px 0 4px;
+}
+
+h2 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.hint {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+label.inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 400;
+}
+
+input[type="text"],
+input:not([type]),
+textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+button {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+button.link {
+  background: none;
+  color: #1d4ed8;
+  padding: 0 4px;
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.banner {
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}
+
+.banner.pending {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+}
+
+.banner.error {
+  background: #fef2f2;
+  border: 1px solid #ef4444;
+}
+
+.result .shot {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.result .meta {
+  color: #6b7280;
+  font-size: 13px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  color: #065f46;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+code {
+  background: #f3f4f6;
+  border-radius: 4px;
+  padding: 1px 4px;
+}

@@ -1,0 +1,28 @@
+.DS_Store
+.env
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# 构建产物
+dist/
+web/dist/
+coverage/
+
+# 本地数据库与运行数据
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# 测试产物
+test-results/
+playwright-report/
+web/test-results/
+web/playwright-report/
+web/.vitest-api-origin
+
+# 日志
+*.log
