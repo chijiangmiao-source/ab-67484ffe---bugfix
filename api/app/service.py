@@ -104,17 +104,6 @@ def allocate_shot_number(
                     .where(SceneCounter.scene_id == scene_id)
                     .values(next_number=number + 1)
                 )
-                conn.exec_driver_sql("COMMIT")
-            except Exception:
-                conn.exec_driver_sql("ROLLBACK")
-                raise
-
-        if interrupt_after_commit:
-            raise PostCommitUnavailableError()
-
-        with engine.connect() as conn:
-            conn.exec_driver_sql("BEGIN IMMEDIATE")
-            try:
                 conn.execute(
                     insert(Operation).values(
                         client_op_id=client_op_id,
@@ -129,7 +118,12 @@ def allocate_shot_number(
                 conn.exec_driver_sql("ROLLBACK")
                 raise
 
-        return Allocation(scene_id, client_op_id, notes, number, created=True)
+    # 提交点即号码生效点：计数器与操作映射已在同一事务中共同持久化，
+    # 注入故障只模拟“落库后、回包前崩溃”，此后重试凭 client_op_id 取回原号码。
+    if interrupt_after_commit:
+        raise PostCommitUnavailableError()
+
+    return Allocation(scene_id, client_op_id, notes, number, created=True)
 
 
 _OPERATION_COLUMNS = (
